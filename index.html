@@ -281,33 +281,6 @@ a,button,[role="button"],input,select{transition:color var(--transition),backgro
     <div class="field"><label for="constMonths">Construction months</label><input type="number" id="constMonths" value="21" step="1"></div>
   </div>
 
-
-  <!-- Commitment Free Fees -->
-  <div class="input-section">
-    <div class="section-label">Bank Commitment Free Fees</div>
-    <div class="field">
-      <label for="commitFeeRate">Fee rate (% / month)</label>
-      <input type="number" id="commitFeeRate" value="0.17" step="0.01" min="0">
-    </div>
-    <div class="field">
-      <label for="commitFeeMonths">Commitment Free fee period (months)</label>
-      <input type="number" id="commitFeeMonths" value="12" step="1" min="0">
-      <span class="field-hint">0 = auto-derive from project dates below</span>
-    </div>
-    <div class="field">
-      <label for="commitFeeRemainingPct">Undisbursed loan (%)</label>
-      <input type="number" id="commitFeeRemainingPct" value="15" step="1" min="0" max="100">
-    </div>
-    <div class="field">
-      <label for="projectStart">Project start</label>
-      <input type="month" id="projectStart" value="2026-09">
-    </div>
-    <div class="field">
-      <label for="projectCompletion">Project completion</label>
-      <input type="month" id="projectCompletion" value="2028-06">
-    </div>
-  </div>
-
   <!-- Exit -->
   <div class="input-section">
     <div class="section-label">Exit</div>
@@ -565,25 +538,6 @@ function recalculate(){
   const sellingCostPct = +document.getElementById('sellingCostPct').value/100;
   const customAppreciation = +document.getElementById('customAppreciation').value/100;
 
-  // ─── Commitment fee inputs
-  const commitFeeRate = (+document.getElementById('commitFeeRate').value || 0) / 100;
-  const commitFeeMonths = +document.getElementById('commitFeeMonths').value || 0;
-  const commitFeeRemainingPct = (+document.getElementById('commitFeeRemainingPct').value || 0) / 100;
-  const projectStart = document.getElementById('projectStart').value;
-  const projectCompletion = document.getElementById('projectCompletion').value;
-
-  function monthsBetween(a, b) {
-    if (!a || !b) return 0;
-    const [ay, am] = a.split('-').map(Number);
-    const [by, bm] = b.split('-').map(Number);
-    if (!ay||!am||!by||!bm) return 0;
-    return Math.max(0, (by - ay) * 12 + (bm - am) + 1);
-  }
-  const effectiveCommitMonths = commitFeeMonths > 0 ? commitFeeMonths : monthsBetween(projectStart, projectCompletion);
-  const commitFeeBase = totalLoan * commitFeeRemainingPct;
-  const monthlyCommitFee = commitFeeBase * commitFeeRate;
-  const totalCommitFees = monthlyCommitFee * effectiveCommitMonths;
-
   // ─── Derived property
   const buildingValue = purchasePrice - landValue;
   const notaryFees = purchasePrice * notaryPct;
@@ -636,29 +590,15 @@ function recalculate(){
   const netTotalCost42 = -(totalConstInterest - constTaxSavingTotal);
 
   document.getElementById('th42-total').textContent = `Total (${constMonths} months)`;
-  if(projectStart && projectCompletion){
-    const fmtM = s => { const [y,m]=s.split('-'); const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return mn[+m-1]+' '+y; };
-    document.getElementById('s42-period').textContent = fmtM(projectStart)+' – '+fmtM(projectCompletion);
-  }
   const tbody42 = document.getElementById('tbody42');
   tbody42.innerHTML = [
     row('Interest on disbursed loan', fmt(-monthlyConstInterest), fmt(-totalConstInterest), 'normal', 'val-neg', 'val-neg'),
     row(`Tax saving at ${ratePct}%`, fmt(constTaxSavingMonthly), fmt(constTaxSavingTotal), 'normal', 'val-pos', 'val-pos'),
-    row('Net interest cost', fmt(netMonthlyCost42), fmt(netTotalCost42), 'subtotal', cls(netMonthlyCost42), cls(netTotalCost42)),
-    row('\u2014', null, null, 'spacer'),
-    row('Commitment Fees', null, null, 'section'),
-    row(`Undisbursed loan base (${(commitFeeRemainingPct*100).toFixed(0)}% of ${fmtAbs(totalLoan)})`, null, fmtAbs(commitFeeBase), 'normal','','val-neg'),
-    row(`Rate × period`, `${(commitFeeRate*100).toFixed(2)}%/mo`, `${effectiveCommitMonths} months`, 'normal','',''),
-    row('Monthly commitment fee', fmt(-monthlyCommitFee), fmt(-totalCommitFees), 'normal','val-neg','val-neg'),
-    row('\u2014', null, null, 'spacer'),
-    row('Total construction cash cost', fmt(netMonthlyCost42 - monthlyCommitFee), fmt(netTotalCost42 - totalCommitFees), 'total', cls(netMonthlyCost42 - monthlyCommitFee), cls(netTotalCost42 - totalCommitFees)),
+    row('Net monthly cost', fmt(netMonthlyCost42), fmt(netTotalCost42), 'total', cls(netMonthlyCost42), cls(netTotalCost42)),
   ].join('');
   document.getElementById('note42').textContent =
-    `Construction interest: €${Math.round(totalConstInterest).toLocaleString('de-DE')} · `+
-    `Tax saving at ${ratePct}%: €${Math.round(constTaxSavingTotal).toLocaleString('de-DE')}. `+
-    `Commitment fees: ${(commitFeeRemainingPct*100).toFixed(0)}% undisbursed (€${Math.round(commitFeeBase).toLocaleString('de-DE')}) `+
-    `× ${(commitFeeRate*100).toFixed(2)}%/mo × ${effectiveCommitMonths} months = `+
-    `€${Math.round(totalCommitFees).toLocaleString('de-DE')}.`;
+    `Tax saving during construction is ${ratePct<40?'modest':'strong'} at ${ratePct}% vs. the `+
+    `€${Math.round(monthlyConstInterest*0.40).toLocaleString('de-DE')}/month it would be at 40%.`;
 
   // ─── Operations yrs 1–4 (Section 4.3)
   const deductibleOpsCosts = (hausgeld + mgmtFees) * 12;
@@ -739,7 +679,7 @@ function recalculate(){
     `at ${(rentGrowth*100).toFixed(1)}% p.a. §7 only (declining base): ~€${Math.round(yr5AfA).toLocaleString('de-DE')}/year.`;
 
   // ─── 4.5 Total Cash Deployed
-  const constPhaseTotal = Math.abs(netTotalCost42) + totalCommitFees;
+  const constPhaseTotal = Math.abs(netTotalCost42);
   const ops14Total = Math.abs(netCF43_mo) * 48;
   const ops510Total = Math.abs(netCF44_mo) * 72;
   const totalDeployed = upfrontEquity + constPhaseTotal + ops14Total + ops510Total;
@@ -747,7 +687,7 @@ function recalculate(){
   const tbody45 = document.getElementById('tbody45');
   tbody45.innerHTML = [
     `<tr><td>Upfront equity</td><td class="right val-neutral">—</td><td class="right">${fmtAbs(upfrontEquity)}</td></tr>`,
-    `<tr><td>Construction phase (interest + commitment fees)</td><td class="right val-neutral">${constMonths} months</td><td class="right">${fmtAbs(constPhaseTotal)}</td></tr>`,
+    `<tr><td>Construction phase net</td><td class="right val-neutral">${constMonths} months</td><td class="right">${fmtAbs(constPhaseTotal)}</td></tr>`,
     `<tr><td>Operations years 1–4 (€${Math.abs(Math.round(netCF43_mo)).toLocaleString('de-DE')}/month)</td><td class="right val-neutral">48 months</td><td class="right">${fmtAbs(ops14Total)}</td></tr>`,
     `<tr><td>Operations years 5–10 (€${Math.abs(Math.round(netCF44_mo)).toLocaleString('de-DE')}/month)</td><td class="right val-neutral">72 months</td><td class="right">${fmtAbs(ops510Total)}</td></tr>`,
     `<tr class="total"><td>Total cash deployed</td><td class="right">—</td><td class="right">${fmtAbs(totalDeployed)}</td></tr>`,
