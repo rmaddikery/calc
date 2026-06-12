@@ -281,6 +281,33 @@ a,button,[role="button"],input,select{transition:color var(--transition),backgro
     <div class="field"><label for="constMonths">Construction months</label><input type="number" id="constMonths" value="21" step="1"></div>
   </div>
 
+
+  <!-- Commitment Fees -->
+  <div class="input-section">
+    <div class="section-label">Bank Commitment Free Fees</div>
+    <div class="field">
+      <label for="commitFeeRate">Fee rate (% / month)</label>
+      <input type="number" id="commitFeeRate" value="0.17" step="0.01" min="0">
+    </div>
+    <div class="field">
+      <label for="commitFeeMonths">Commitment fee period (months)</label>
+      <input type="number" id="commitFeeMonths" value="12" step="1" min="0">
+      <span class="field-hint">0 = auto-derive from project dates below</span>
+    </div>
+    <div class="field">
+      <label for="commitFeeRemainingPct">Undisbursed loan (%)</label>
+      <input type="number" id="commitFeeRemainingPct" value="15" step="1" min="0" max="100">
+    </div>
+    <div class="field">
+      <label for="projectStart">Project start</label>
+      <input type="month" id="projectStart" value="2026-09">
+    </div>
+    <div class="field">
+      <label for="projectCompletion">Project completion</label>
+      <input type="month" id="projectCompletion" value="2028-06">
+    </div>
+  </div>
+
   <!-- Exit -->
   <div class="input-section">
     <div class="section-label">Exit</div>
@@ -318,6 +345,11 @@ a,button,[role="button"],input,select{transition:color var(--transition),backgro
         <div class="tax-kpi-label">Marginal tax rate</div>
         <div class="tax-rate-badge" id="tp-rate-badge">26% marginal rate</div>
         <div class="tax-kpi-sub" style="margin-top:4px" id="tp-rate-explain">Income falls in the 26% bracket (splitting basis: €49,000)</div>
+      </div>
+      <div class="tax-kpi">
+        <div class="tax-kpi-label">Tax saving / month</div>
+        <div class="tax-kpi-value" id="tp-monthly-saving">–</div>
+        <div class="tax-kpi-sub">From rental loss &amp; depreciation</div>
       </div>
     </div>
 
@@ -385,8 +417,8 @@ a,button,[role="button"],input,select{transition:color var(--transition),backgro
   <!-- Exit Scenarios -->
   <div class="analysis-block">
     <div class="analysis-header">
-      <h2>Exit Scenarios</h2>
-      <span class="sub">Tax-free under §23 EStG · 10-year hold</span>
+      <h2>Exit Scenarios (Assuming property appreciates x% annually)</h2>
+      <span class="sub">Tax-free under §23 EStG · Min. 10-year hold</span>
     </div>
     <div style="padding:var(--space-5)">
       <div class="scenario-grid" id="scenarioGrid"></div>
@@ -398,6 +430,32 @@ a,button,[role="button"],input,select{transition:color var(--transition),backgro
     <h2>ROI by Appreciation Scenario</h2>
     <div class="chart-container"><canvas id="roiChart"></canvas></div>
   </div>
+
+  <!-- Disclaimer -->
+  <footer style="
+    border-top: 1px solid var(--color-border);
+    padding: var(--space-5) var(--space-6);
+    background: var(--color-surface-offset);
+    border-radius: var(--radius-lg);
+  ">
+    <p style="
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      line-height: 1.7;
+      max-width: 72ch;
+    ">
+      <strong style="color: var(--color-text);">Disclaimer:</strong>
+      This calculator is provided for <strong>informational and illustrative purposes only</strong>.
+      All outputs — including projected cashflows, tax savings, depreciation, ROI estimates, and exit
+      scenarios — are based on simplified assumptions and user-provided inputs. They do not constitute
+      financial, tax, legal, or investment advice. German tax law (§7, §7b AfA, §23 EStG, Splitting­tabelle)
+      is complex and subject to change; individual circumstances vary significantly.
+      <strong>Before making any investment decision, always consult a qualified
+      Steuerberater (tax advisor), and/or
+      licensed financial planner.</strong> The author accepts no liability for decisions
+      made on the basis of this tool.
+    </p>
+  </footer>
 
 </main>
 </div>
@@ -510,6 +568,11 @@ function row(label,monthly,annual,type='normal',monthlyClass='',annualClass=''){
 
 let roiChart = null;
 
+// Null-safe DOM helpers
+function $safe(id){ return document.getElementById(id); }
+function setText(id, val){ var el=$safe(id); if(el) el.textContent=val; }
+function setHTML(id, val){ var el=$safe(id); if(el) el.innerHTML=val; }
+
 function recalculate(){
   // ─── Read inputs
   const purchasePrice = +document.getElementById('purchasePrice').value;
@@ -538,6 +601,20 @@ function recalculate(){
   const sellingCostPct = +document.getElementById('sellingCostPct').value/100;
   const customAppreciation = +document.getElementById('customAppreciation').value/100;
 
+  // ─── Commitment fee inputs
+  const commitFeeRate = (+document.getElementById('commitFeeRate').value || 0) / 100;
+  const commitFeeMonths = +document.getElementById('commitFeeMonths').value || 0;
+  const commitFeeRemainingPct = (+document.getElementById('commitFeeRemainingPct').value || 0) / 100;
+  const projectStart = document.getElementById('projectStart').value;
+  const projectCompletion = document.getElementById('projectCompletion').value;
+
+  function monthsBetween(a, b) {
+    if (!a || !b) return 0;
+    const [ay, am] = a.split('-').map(Number);
+    const [by, bm] = b.split('-').map(Number);
+    if (!ay||!am||!by||!bm) return 0;
+    return Math.max(0, (by - ay) * 12 + (bm - am) + 1);
+  }
   // ─── Derived property
   const buildingValue = purchasePrice - landValue;
   const notaryFees = purchasePrice * notaryPct;
@@ -545,6 +622,12 @@ function recalculate(){
   const totalPurchaseFees = notaryFees + transferTax;
   const upfrontEquity = totalPurchaseFees + downPayment;
   const totalLoan = bankLoan + kfwLoan;
+
+  // ─── Commitment fees (requires totalLoan)
+  const effectiveCommitMonths = commitFeeMonths > 0 ? commitFeeMonths : monthsBetween(projectStart, projectCompletion);
+  const commitFeeBase = totalLoan * commitFeeRemainingPct;
+  const monthlyCommitFee = commitFeeBase * commitFeeRate;
+  const totalCommitFees = monthlyCommitFee * effectiveCommitMonths;
   const blendedRate = (bankLoan*bankRate + kfwLoan*kfwRate)/totalLoan;
   const monthlyBankInterest = bankLoan*bankRate/12;
   const monthlyKfwInterest = kfwLoan*kfwRate/12;
@@ -558,18 +641,18 @@ function recalculate(){
   const {zvE, basisIncome, bracket} = taxInfo;
 
   // Update tax profile panel
-  document.getElementById('tp-income').textContent = '€'+householdIncome.toLocaleString('de-DE');
-  document.getElementById('tp-income-type').textContent = incomeType==='gross'
+  setText('tp-income', '€'+householdIncome.toLocaleString('de-DE'));
+  setText('tp-income-type', incomeType==='gross'
     ? `gross income → €${Math.round(zvE).toLocaleString('de-DE')} taxable (est.)`
-    : 'taxable income (zu versteuerndes Einkommen)';
-  document.getElementById('tp-taxclass').textContent = taxClass==='married'
-    ? 'Married (Kl. 3+5)' : taxClass==='single_parent' ? 'Single parent (Kl. 2)' : 'Single (Kl. 1)';
+    : 'taxable income (zu versteuerndes Einkommen)');
+  setText('tp-taxclass', taxClass==='married'
+    ? 'Married (Kl. 3+5)' : taxClass==='single_parent' ? 'Single parent (Kl. 2)' : 'Single (Kl. 1)');
   const ratePct = Math.round(marginalRate*100);
-  document.getElementById('tp-rate-badge').textContent = ratePct+'% marginal rate';
-  document.getElementById('tp-rate-explain').textContent = taxClass==='married'
+  setText('tp-rate-badge', ratePct+'% marginal rate');
+  setText('tp-rate-explain', taxClass==='married'
     ? `Splitting basis: €${Math.round(basisIncome).toLocaleString('de-DE')} · ${bracket}`
-    : `Taxable income: €${Math.round(zvE).toLocaleString('de-DE')} · ${bracket}`;
-  document.getElementById('taxBracketsTable').innerHTML = buildBracketTable(zvE, taxClass);
+    : `Taxable income: €${Math.round(zvE).toLocaleString('de-DE')} · ${bracket}`);
+  setHTML('taxBracketsTable', buildBracketTable(zvE, taxClass));
 
   // ─── §7 AfA
   const para7Annual = buildingValue * para7Rate;
@@ -589,16 +672,30 @@ function recalculate(){
   const netMonthlyCost42 = -(monthlyConstInterest - constTaxSavingMonthly);
   const netTotalCost42 = -(totalConstInterest - constTaxSavingTotal);
 
-  document.getElementById('th42-total').textContent = `Total (${constMonths} months)`;
+  setText('th42-total', `Total (${constMonths} months)`);
+  if(projectStart && projectCompletion){
+    const fmtM = s => { const [y,m]=s.split('-'); const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return mn[+m-1]+' '+y; };
+    setText('s42-period', fmtM(projectStart)+' – '+fmtM(projectCompletion));
+  }
   const tbody42 = document.getElementById('tbody42');
   tbody42.innerHTML = [
     row('Interest on disbursed loan', fmt(-monthlyConstInterest), fmt(-totalConstInterest), 'normal', 'val-neg', 'val-neg'),
     row(`Tax saving at ${ratePct}%`, fmt(constTaxSavingMonthly), fmt(constTaxSavingTotal), 'normal', 'val-pos', 'val-pos'),
-    row('Net monthly cost', fmt(netMonthlyCost42), fmt(netTotalCost42), 'total', cls(netMonthlyCost42), cls(netTotalCost42)),
+    row('Net interest cost', fmt(netMonthlyCost42), fmt(netTotalCost42), 'subtotal', cls(netMonthlyCost42), cls(netTotalCost42)),
+    row('\u2014', null, null, 'spacer'),
+    row('Commitment Fees', null, null, 'section'),
+    row(`Undisbursed loan base (${(commitFeeRemainingPct*100).toFixed(0)}% of ${fmtAbs(totalLoan)})`, null, fmtAbs(commitFeeBase), 'normal','','val-neg'),
+    row(`Rate × period`, `${(commitFeeRate*100).toFixed(2)}%/mo`, `${effectiveCommitMonths} months`, 'normal','',''),
+    row('Monthly commitment fee', fmt(-monthlyCommitFee), fmt(-totalCommitFees), 'normal','val-neg','val-neg'),
+    row('\u2014', null, null, 'spacer'),
+    row('Total construction cash cost', fmt(netMonthlyCost42 - monthlyCommitFee), fmt(netTotalCost42 - totalCommitFees), 'total', cls(netMonthlyCost42 - monthlyCommitFee), cls(netTotalCost42 - totalCommitFees)),
   ].join('');
   document.getElementById('note42').textContent =
-    `Tax saving during construction is ${ratePct<40?'modest':'strong'} at ${ratePct}% vs. the `+
-    `€${Math.round(monthlyConstInterest*0.40).toLocaleString('de-DE')}/month it would be at 40%.`;
+    `Construction interest: €${Math.round(totalConstInterest).toLocaleString('de-DE')} · `+
+    `Tax saving at ${ratePct}%: €${Math.round(constTaxSavingTotal).toLocaleString('de-DE')}. `+
+    `Commitment fees: ${(commitFeeRemainingPct*100).toFixed(0)}% undisbursed (€${Math.round(commitFeeBase).toLocaleString('de-DE')}) `+
+    `× ${(commitFeeRate*100).toFixed(2)}%/mo × ${effectiveCommitMonths} months = `+
+    `€${Math.round(totalCommitFees).toLocaleString('de-DE')}.`;
 
   // ─── Operations yrs 1–4 (Section 4.3)
   const deductibleOpsCosts = (hausgeld + mgmtFees) * 12;
@@ -618,7 +715,7 @@ function recalculate(){
   const netCF43_yr = netCF43_mo * 12;
 
   // Update tax panel monthly saving
-  document.getElementById('tp-monthly-saving').textContent = fmt(taxSaving43_mo);
+  setText('tp-monthly-saving', fmt(taxSaving43_mo));
 
   const tbody43 = document.getElementById('tbody43');
   tbody43.innerHTML = [
@@ -679,7 +776,7 @@ function recalculate(){
     `at ${(rentGrowth*100).toFixed(1)}% p.a. §7 only (declining base): ~€${Math.round(yr5AfA).toLocaleString('de-DE')}/year.`;
 
   // ─── 4.5 Total Cash Deployed
-  const constPhaseTotal = Math.abs(netTotalCost42);
+  const constPhaseTotal = Math.abs(netTotalCost42) + totalCommitFees;
   const ops14Total = Math.abs(netCF43_mo) * 48;
   const ops510Total = Math.abs(netCF44_mo) * 72;
   const totalDeployed = upfrontEquity + constPhaseTotal + ops14Total + ops510Total;
@@ -687,7 +784,7 @@ function recalculate(){
   const tbody45 = document.getElementById('tbody45');
   tbody45.innerHTML = [
     `<tr><td>Upfront equity</td><td class="right val-neutral">—</td><td class="right">${fmtAbs(upfrontEquity)}</td></tr>`,
-    `<tr><td>Construction phase net</td><td class="right val-neutral">${constMonths} months</td><td class="right">${fmtAbs(constPhaseTotal)}</td></tr>`,
+    `<tr><td>Construction phase (interest + commitment fees)</td><td class="right val-neutral">${constMonths} months</td><td class="right">${fmtAbs(constPhaseTotal)}</td></tr>`,
     `<tr><td>Operations years 1–4 (€${Math.abs(Math.round(netCF43_mo)).toLocaleString('de-DE')}/month)</td><td class="right val-neutral">48 months</td><td class="right">${fmtAbs(ops14Total)}</td></tr>`,
     `<tr><td>Operations years 5–10 (€${Math.abs(Math.round(netCF44_mo)).toLocaleString('de-DE')}/month)</td><td class="right val-neutral">72 months</td><td class="right">${fmtAbs(ops510Total)}</td></tr>`,
     `<tr class="total"><td>Total cash deployed</td><td class="right">—</td><td class="right">${fmtAbs(totalDeployed)}</td></tr>`,
@@ -712,9 +809,9 @@ function recalculate(){
 
   const scenarios = [
     calcScenario(0.00, 'Worst Case', 'misses', 'Market flat for a decade'),
-    calcScenario(0.02, 'Conservative', 'misses', 'Below 6–8% return target'),
+    calcScenario(0.02, 'Conservative', 'misses', 'Below 6-8% ROI return target'),
     calcScenario(0.035,'Base Case', 'meets', 'Meets target. Most likely scenario.'),
-    calcScenario(0.05, 'Optimistic', 'meets', 'Strong. Berlin new-build trend.'),
+    calcScenario(0.05, 'Optimistic', 'meets', 'Strong.'),
     calcScenario(customAppreciation, 'Custom', 'custom', `${(customAppreciation*100).toFixed(1)}% appreciation`),
   ];
 
