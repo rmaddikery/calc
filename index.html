@@ -3,887 +3,122 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RE Investment Calculator</title>
+<title>PropROI Calculator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>
-/* ─── Art direction: real estate investment tool → restrained, financial, precise
-   Palette: warm neutral surfaces, deep teal accent
-   Typography: Instrument Serif display + Inter body
-   Density: balanced-dense */
-
-:root, [data-theme="light"] {
-  --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
-  --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
-  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
-  --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
-  --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
-  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;
-  --space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;
-  --space-12:3rem;--space-16:4rem;
-  --color-bg: #f5f4f0;
-  --color-surface: #f9f8f5;
-  --color-surface-2: #ffffff;
-  --color-surface-offset: #eeece7;
-  --color-border: oklch(0.28 0.01 80 / 0.12);
-  --color-divider: #dcd9d5;
-  --color-text: #1e1c17;
-  --color-text-muted: #6b6a65;
-  --color-text-faint: #b0afa9;
-  --color-text-inverse: #f9f8f4;
-  --color-primary: #01696f;
-  --color-primary-hover: #0c4e54;
-  --color-primary-highlight: #d4e8e6;
-  --color-success: #2e6b18;
-  --color-success-bg: #dff0d8;
-  --color-error: #a12c2c;
-  --color-error-bg: #fbeaea;
-  --color-warning: #7a5200;
-  --color-warning-bg: #fef3cc;
-  --color-gold: #b07a00;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --shadow-sm: 0 1px 3px oklch(0.2 0.01 80 / 0.06);
-  --shadow-md: 0 4px 12px oklch(0.2 0.01 80 / 0.08);
-  --font-display: 'Instrument Serif', Georgia, serif;
-  --font-body: 'Inter', 'Helvetica Neue', sans-serif;
-  --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-[data-theme="dark"] {
-  --color-bg: #141312;
-  --color-surface: #1a1917;
-  --color-surface-2: #1f1e1c;
-  --color-surface-offset: #252320;
-  --color-border: oklch(1 0 0 / 0.08);
-  --color-divider: #2a2926;
-  --color-text: #d4d2ce;
-  --color-text-muted: #7c7b76;
-  --color-text-faint: #504f4c;
-  --color-text-inverse: #1a1917;
-  --color-primary: #4f9ea8;
-  --color-primary-hover: #3a8590;
-  --color-primary-highlight: #1e3638;
-  --color-success: #5dab3a;
-  --color-success-bg: #1c3a14;
-  --color-error: #e06060;
-  --color-error-bg: #3a1a1a;
-  --color-warning: #e8b84a;
-  --color-warning-bg: #3a2c0a;
-  --color-gold: #d4a020;
-  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.25);
-  --shadow-md: 0 4px 12px oklch(0 0 0 / 0.35);
-}
-@media (prefers-color-scheme: dark) { :root:not([data-theme]) {
-  --color-bg:#141312;--color-surface:#1a1917;--color-surface-2:#1f1e1c;
-  --color-surface-offset:#252320;--color-border:oklch(1 0 0/.08);--color-divider:#2a2926;
-  --color-text:#d4d2ce;--color-text-muted:#7c7b76;--color-text-faint:#504f4c;
-  --color-text-inverse:#1a1917;--color-primary:#4f9ea8;--color-primary-hover:#3a8590;
-  --color-primary-highlight:#1e3638;--color-success:#5dab3a;--color-success-bg:#1c3a14;
-  --color-error:#e06060;--color-error-bg:#3a1a1a;--color-warning:#e8b84a;
-  --color-warning-bg:#3a2c0a;--color-gold:#d4a020;
-  --shadow-sm:0 1px 3px oklch(0 0 0/.25);--shadow-md:0 4px 12px oklch(0 0 0/.35);
-}}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;scroll-behavior:smooth;scroll-padding-top:var(--space-16)}
-body{min-height:100dvh;font-family:var(--font-body);font-size:var(--text-sm);color:var(--color-text);background:var(--color-bg);line-height:1.6}
-img,svg{display:block;max-width:100%}
-input,select,button{font:inherit;color:inherit}
-button{cursor:pointer;background:none;border:none}
-table{border-collapse:collapse;width:100%}
-a,button,[role="button"],input,select{transition:color var(--transition),background var(--transition),border-color var(--transition),box-shadow var(--transition)}
-:focus-visible{outline:2px solid var(--color-primary);outline-offset:3px;border-radius:var(--radius-sm)}
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
-
-/* ─── LAYOUT ─── */
-.app-shell{display:grid;grid-template-columns:280px 1fr;min-height:100dvh}
-@media(max-width:900px){.app-shell{grid-template-columns:1fr}}
-
-/* ─── SIDEBAR ─── */
-.sidebar{background:var(--color-surface);border-right:1px solid var(--color-border);padding:var(--space-6) var(--space-5);display:flex;flex-direction:column;gap:var(--space-6);position:sticky;top:0;height:100dvh;overflow-y:auto}
-@media(max-width:900px){.sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--color-border)}}
-.sidebar-header{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3)}
-.logo{display:flex;align-items:center;gap:var(--space-2)}
-.logo-mark{width:28px;height:28px;flex-shrink:0}
-.logo-text{font-family:var(--font-display);font-size:var(--text-base);font-weight:400;letter-spacing:-0.01em;color:var(--color-text)}
-.theme-toggle{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-md);color:var(--color-text-muted)}
-.theme-toggle:hover{background:var(--color-surface-offset);color:var(--color-text)}
-.input-section{display:flex;flex-direction:column;gap:var(--space-3)}
-.section-label{font-size:var(--text-xs);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text-faint);padding-bottom:var(--space-2);border-bottom:1px solid var(--color-divider)}
-.field{display:flex;flex-direction:column;gap:var(--space-1)}
-.field label{font-size:var(--text-xs);font-weight:500;color:var(--color-text-muted)}
-.field input,.field select{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);font-size:var(--text-xs);width:100%}
-.field input:focus,.field select:focus{border-color:var(--color-primary);outline:none;box-shadow:0 0 0 3px oklch(from var(--color-primary) l c h / 0.15)}
-.field-hint{font-size:var(--text-xs);color:var(--color-text-faint);margin-top:2px}
-.calc-btn{margin-top:var(--space-2);background:var(--color-primary);color:var(--color-text-inverse);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--text-sm);font-weight:600;width:100%;text-align:center;letter-spacing:0.01em}
-.calc-btn:hover{background:var(--color-primary-hover)}
-.calc-btn:active{transform:translateY(1px)}
-
-/* ─── MAIN ─── */
-.main{padding:var(--space-8) var(--space-8);overflow-y:auto;display:flex;flex-direction:column;gap:var(--space-8)}
-@media(max-width:700px){.main{padding:var(--space-5) var(--space-4)}}
-
-/* ─── PAGE HEADER ─── */
-.page-header{display:flex;flex-direction:column;gap:var(--space-2)}
-.page-header h1{font-family:var(--font-display);font-size:var(--text-xl);font-weight:400;color:var(--color-text);letter-spacing:-0.02em}
-.page-header p{font-size:var(--text-xs);color:var(--color-text-muted)}
-
-/* ─── TAX PROFILE PANEL ─── */
-.tax-profile-panel{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-5);box-shadow:var(--shadow-sm)}
-.panel-title{font-size:var(--text-base);font-weight:600;color:var(--color-text);margin-bottom:var(--space-4)}
-.tax-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)}
-@media(max-width:600px){.tax-grid{grid-template-columns:1fr}}
-.tax-kpi{display:flex;flex-direction:column;gap:var(--space-1)}
-.tax-kpi-label{font-size:var(--text-xs);color:var(--color-text-muted);font-weight:500}
-.tax-kpi-value{font-size:var(--text-lg);font-weight:700;color:var(--color-text);font-variant-numeric:tabular-nums}
-.tax-kpi-sub{font-size:var(--text-xs);color:var(--color-text-faint)}
-.tax-rate-badge{display:inline-flex;align-items:center;gap:var(--space-2);background:var(--color-primary-highlight);color:var(--color-primary);padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:700;letter-spacing:0.02em;margin-top:var(--space-2)}
-.tax-brackets-table{margin-top:var(--space-4)}
-.tax-brackets-table table th{font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);text-align:left;padding:var(--space-2) var(--space-3);background:var(--color-surface-offset);border-bottom:1px solid var(--color-border)}
-.tax-brackets-table table td{font-size:var(--text-xs);color:var(--color-text);padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--color-border);font-variant-numeric:tabular-nums}
-.tax-brackets-table tr.active-bracket td{background:var(--color-primary-highlight);font-weight:600;color:var(--color-primary)}
-.tax-brackets-table tr.active-bracket td:first-child::before{content:"▶ ";font-size:8px}
-
-/* ─── ANALYSIS SECTIONS ─── */
-.analysis-block{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
-.analysis-header{padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--color-border);display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap}
-.analysis-header h2{font-size:var(--text-base);font-weight:600;color:var(--color-text)}
-.analysis-header .sub{font-size:var(--text-xs);color:var(--color-text-muted)}
-.analysis-table{width:100%}
-.analysis-table th{font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);text-align:left;padding:var(--space-2) var(--space-5);background:var(--color-surface-offset);border-bottom:1px solid var(--color-border);font-variant-numeric:tabular-nums}
-.analysis-table th.right{text-align:right}
-.analysis-table td{font-size:var(--text-xs);color:var(--color-text);padding:var(--space-2) var(--space-5);border-bottom:1px solid var(--color-border);font-variant-numeric:tabular-nums}
-.analysis-table td.right{text-align:right}
-.analysis-table tr.subtotal td{font-weight:600;background:color-mix(in oklch,var(--color-surface-offset) 60%,transparent)}
-.analysis-table tr.total td{font-weight:700;background:var(--color-surface-offset);border-top:2px solid var(--color-border)}
-.analysis-table tr.spacer td{padding:var(--space-1) var(--space-5);background:var(--color-surface-offset);font-size:var(--text-xs);color:var(--color-text-muted);font-style:italic}
-.analysis-table tr.section-header td{background:var(--color-surface-offset);font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);font-style:italic;padding:var(--space-2) var(--space-5)}
-.val-pos{color:var(--color-success)}
-.val-neg{color:var(--color-error)}
-.val-neutral{color:var(--color-text-muted)}
-.analysis-note{padding:var(--space-3) var(--space-5);font-size:var(--text-xs);color:var(--color-text-muted);background:var(--color-surface-offset);border-top:1px solid var(--color-border)}
-
-/* ─── TOTAL DEPLOYED TABLE ─── */
-.deployed-table th,.deployed-table td{padding:var(--space-2) var(--space-5)}
-
-/* ─── SCENARIO CARDS ─── */
-.scenario-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--space-4)}
-.scenario-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4) var(--space-5);box-shadow:var(--shadow-sm)}
-.scenario-card.meets .sc-roi{color:var(--color-success)}
-.scenario-card.misses .sc-roi{color:var(--color-error)}
-.scenario-card.custom .sc-roi{color:var(--color-gold)}
-.sc-label{font-size:var(--text-xs);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-faint);margin-bottom:var(--space-2)}
-.sc-appr{font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:var(--space-3)}
-.sc-table{width:100%;font-size:var(--text-xs)}
-.sc-table td{padding:2px 0;color:var(--color-text)}
-.sc-table td:last-child{text-align:right;font-variant-numeric:tabular-nums}
-.sc-roi-row td{font-weight:700;padding-top:var(--space-2)!important;border-top:1px solid var(--color-border)}
-.sc-roi{font-size:var(--text-base);font-weight:700}
-.sc-verdict{font-size:var(--text-xs);margin-top:var(--space-2);padding:var(--space-1) var(--space-2);border-radius:var(--radius-sm);font-weight:500}
-.scenario-card.meets .sc-verdict{background:var(--color-success-bg);color:var(--color-success)}
-.scenario-card.misses .sc-verdict{background:var(--color-error-bg);color:var(--color-error)}
-.scenario-card.custom .sc-verdict{background:var(--color-warning-bg);color:var(--color-warning)}
-
-/* ─── CHART ─── */
-.chart-wrap{padding:var(--space-5);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);box-shadow:var(--shadow-sm)}
-.chart-wrap h2{font-size:var(--text-base);font-weight:600;color:var(--color-text);margin-bottom:var(--space-4)}
-.chart-container{position:relative;height:240px}
-
-/* ─── MISC ─── */
-.full-radius-full{border-radius:9999px}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="app-shell">
 
-<!-- ═══ SIDEBAR ═══ -->
-<aside class="sidebar" aria-label="Calculator inputs">
-  <div class="sidebar-header">
-    <div class="logo">
-      <svg class="logo-mark" viewBox="0 0 28 28" fill="none" aria-label="RE Calc logo">
-        <rect width="28" height="28" rx="6" fill="currentColor" style="color:var(--color-primary)"/>
-        <rect x="5" y="14" width="5" height="9" rx="1" fill="white" opacity="0.9"/>
-        <rect x="11.5" y="10" width="5" height="13" rx="1" fill="white"/>
-        <rect x="18" y="7" width="5" height="16" rx="1" fill="white" opacity="0.7"/>
-        <path d="M4 13 L14 6 L24 13" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      </svg>
-      <span class="logo-text">RE Calculator</span>
-    </div>
-    <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-    </button>
-  </div>
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <!-- Fields injected here by main.js (from INPUTS config in config.js) -->
+    <div id="sidebar-fields"></div>
+    <button class="calc-btn" onclick="recalculate()">Calculate ROI</button>
+  </aside>
 
-  <!-- Property -->
-  <div class="input-section">
-    <div class="section-label">Property</div>
-    <div class="field"><label for="purchasePrice">Purchase price (€)</label><input type="number" id="purchasePrice" value="285000" step="1000"></div>
-    <div class="field"><label for="landValue">Land value (€)</label><input type="number" id="landValue" value="57000" step="1000"></div>
-    <div class="field"><label for="sqm">Size (m²)</label><input type="number" id="sqm" value="37" step="1"></div>
-    <div class="field"><label for="notaryPct">Notary fees (%)</label><input type="number" id="notaryPct" value="2" step="0.1"></div>
-    <div class="field"><label for="transferTaxPct">Transfer tax (%)</label><input type="number" id="transferTaxPct" value="6" step="0.5"></div>
-    <div class="field"><label for="downPayment">Down payment (€)</label><input type="number" id="downPayment" value="924" step="100"></div>
-  </div>
-
-  <!-- Financing -->
-  <div class="input-section">
-    <div class="section-label">Financing</div>
-    <div class="field"><label for="bankLoan">Bank loan (€)</label><input type="number" id="bankLoan" value="134000" step="1000"></div>
-    <div class="field"><label for="bankRate">Bank interest rate (%)</label><input type="number" id="bankRate" value="3.84" step="0.01"></div>
-    <div class="field"><label for="kfwLoan">KfW loan (€)</label><input type="number" id="kfwLoan" value="150000" step="1000"></div>
-    <div class="field"><label for="kfwRate">KfW interest rate (%)</label><input type="number" id="kfwRate" value="2.54" step="0.01"></div>
-    <div class="field"><label for="repaymentRate">Repayment rate (% p.a.)</label><input type="number" id="repaymentRate" value="2.5" step="0.1"></div>
-  </div>
-
-  <!-- Operations -->
-  <div class="input-section">
-    <div class="section-label">Operations</div>
-    <div class="field"><label for="grossRent">Monthly rent (€)</label><input type="number" id="grossRent" value="560" step="10"></div>
-    <div class="field"><label for="rentGrowth">Annual rent growth (%)</label><input type="number" id="rentGrowth" value="1.5" step="0.1"></div>
-    <div class="field"><label for="hausgeld">Hausgeld/non-recoverable (€/mo)</label><input type="number" id="hausgeld" value="120" step="5"></div>
-    <div class="field"><label for="mgmtFees">Management fees (€/mo)</label><input type="number" id="mgmtFees" value="60" step="5"></div>
-    <div class="field"><label for="maintReserve">Maintenance reserve (€/mo)</label><input type="number" id="maintReserve" value="46" step="5"></div>
-  </div>
-
-  <!-- Tax Profile -->
-  <div class="input-section">
-    <div class="section-label">Tax Profile</div>
-    <div class="field">
-      <label for="incomeType">Income basis</label>
-      <select id="incomeType">
-        <option value="taxable">Taxable income (zu versteuerndes Einkommen)</option>
-        <option value="gross">Gross income (Bruttoeinkommen)</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="householdIncome">Household income (€/year)</label>
-      <input type="number" id="householdIncome" value="98000" step="1000">
-      <span class="field-hint" id="incomeHint">Enter joint household taxable income (Steuerklasse 3+5)</span>
-    </div>
-    <div class="field">
-      <label for="taxClass">Tax class (Steuerklasse)</label>
-      <select id="taxClass">
-        <option value="married">Married / Ehegattensplitting (Kl. 3+5)</option>
-        <option value="single">Single (Kl. 1)</option>
-        <option value="single_parent">Single parent (Kl. 2)</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Depreciation -->
-  <div class="input-section">
-    <div class="section-label">Depreciation (AfA)</div>
-    <div class="field"><label for="para7Rate">§7 AfA rate (%)</label><input type="number" id="para7Rate" value="5" step="0.5"></div>
-    <div class="field"><label for="para7bCap">§7b cap (€/m²)</label><input type="number" id="para7bCap" value="4800" step="100"></div>
-    <div class="field"><label for="constMonths">Construction months</label><input type="number" id="constMonths" value="21" step="1"></div>
-  </div>
-
-
-  <!-- Commitment Fees -->
-  <div class="input-section">
-    <div class="section-label">Bank Commitment Free Fees</div>
-    <div class="field">
-      <label for="commitFeeRate">Fee rate (% / month)</label>
-      <input type="number" id="commitFeeRate" value="0.17" step="0.01" min="0">
-    </div>
-    <div class="field">
-      <label for="commitFeeMonths">Commitment fee period (months)</label>
-      <input type="number" id="commitFeeMonths" value="12" step="1" min="0">
-      <span class="field-hint">0 = auto-derive from project dates below</span>
-    </div>
-    <div class="field">
-      <label for="commitFeeRemainingPct">Undisbursed loan (%)</label>
-      <input type="number" id="commitFeeRemainingPct" value="15" step="1" min="0" max="100">
-    </div>
-    <div class="field">
-      <label for="projectStart">Project start</label>
-      <input type="month" id="projectStart" value="2026-09">
-    </div>
-    <div class="field">
-      <label for="projectCompletion">Project completion</label>
-      <input type="month" id="projectCompletion" value="2028-06">
-    </div>
-  </div>
-
-  <!-- Exit -->
-  <div class="input-section">
-    <div class="section-label">Exit</div>
-    <div class="field"><label for="holdYears">Hold period (years)</label><input type="number" id="holdYears" value="10" step="1"></div>
-    <div class="field"><label for="sellingCostPct">Selling costs (%)</label><input type="number" id="sellingCostPct" value="1.5" step="0.1"></div>
-    <div class="field"><label for="customAppreciation">Custom appreciation (%)</label><input type="number" id="customAppreciation" value="3.5" step="0.1"></div>
-  </div>
-
-  <button class="calc-btn" onclick="recalculate()">Recalculate</button>
-</aside>
-
-<!-- ═══ MAIN ═══ -->
-<main class="main">
-
-  <div class="page-header">
-    <h1>Real Estate Investment Analysis</h1>
-    <p id="pageSubtitle">Adjust inputs on the left and press Recalculate</p>
-  </div>
-
-  <!-- Tax Profile Panel -->
-  <div class="tax-profile-panel">
-    <div class="panel-title">Tax Profile</div>
-    <div class="tax-grid">
-      <div class="tax-kpi">
-        <div class="tax-kpi-label">Household income</div>
-        <div class="tax-kpi-value" id="tp-income">€98,000</div>
-        <div class="tax-kpi-sub" id="tp-income-type">taxable income (zu versteuerndes Einkommen)</div>
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+    <div class="topbar">
+      <div class="logo-wrap">
+        <svg aria-label="PropROI" width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="8" fill="var(--primary)"/>
+          <path d="M8 24V14l8-6 8 6v10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M13 24v-6h6v6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="logo-text">Prop<span>ROI</span></span>
       </div>
-      <div class="tax-kpi">
-        <div class="tax-kpi-label">Filing status</div>
-        <div class="tax-kpi-value" id="tp-taxclass">Married (Kl. 3+5)</div>
-        <div class="tax-kpi-sub">Ehegattensplitting applies</div>
+      <button class="theme-btn" data-theme-toggle aria-label="Toggle dark mode"></button>
+    </div>
+
+    <!-- Scenario pills (injected by main.js from SCENARIO_PRESETS in config.js) -->
+    <div class="scenario-pills" id="scenario-pills"></div>
+
+    <!-- Error banner -->
+    <div class="err-banner" id="errBanner"></div>
+
+    <!-- KPI cards -->
+    <div id="sec-kpi" style="display:none">
+      <div class="kpi-grid" id="kpiGrid"></div>
+    </div>
+
+    <!-- Phase sections grid -->
+    <div class="sections-grid" id="sectionsGrid">
+
+    <!-- Construction phase -->
+    <div class="section" id="sec-construction" style="display:none">
+      <h2 class="section-title">Construction Phase</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th style="text-align:left">Item</th><th>Monthly</th><th>Annual</th></tr></thead>
+          <tbody id="tbody42"></tbody>
+        </table>
       </div>
-      <div>
-        <div class="tax-kpi-label">Marginal tax rate</div>
-        <div class="tax-rate-badge" id="tp-rate-badge">26% marginal rate</div>
-        <div class="tax-kpi-sub" style="margin-top:4px" id="tp-rate-explain">Income falls in the 26% bracket (splitting basis: €49,000)</div>
+      <p class="section-note" id="note42"></p>
+    </div>
+
+    <!-- Years 1–4 -->
+    <div class="section" id="sec-phase2" style="display:none">
+      <h2 class="section-title">Years 1–4 Post-Completion <small style="font-size:0.72rem;color:var(--muted)">(AfA window)</small></h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th style="text-align:left">Item</th><th>Monthly</th><th>Annual</th></tr></thead>
+          <tbody id="tbody43"></tbody>
+        </table>
       </div>
-      <div class="tax-kpi">
-        <div class="tax-kpi-label">Tax saving / month</div>
-        <div class="tax-kpi-value" id="tp-monthly-saving">–</div>
-        <div class="tax-kpi-sub">From rental loss &amp; depreciation</div>
+      <p class="section-note" id="note43"></p>
+    </div>
+
+    <!-- Years 5–10 -->
+    <div class="section" id="sec-phase3" style="display:none">
+      <h2 class="section-title">Years 5–10 Post-Completion</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th style="text-align:left">Item</th><th>Monthly</th><th>Annual</th></tr></thead>
+          <tbody id="tbody44"></tbody>
+        </table>
+      </div>
+      <p class="section-note" id="note44"></p>
+    </div>
+
+    </div><!-- /sections-grid -->
+
+    <!-- Capital deployed -->
+    <div class="section" id="sec-cash" style="display:none">
+      <h2 class="section-title">Total Capital Deployed</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th style="text-align:left">Item</th><th>Amount (€)</th></tr></thead>
+          <tbody id="tbodyCash"></tbody>
+        </table>
       </div>
     </div>
 
-    <div class="tax-brackets-table" id="taxBracketsTable">
-      <!-- populated by JS -->
+    <!-- Exit scenarios -->
+    <div class="section" id="sec-exit" style="display:none">
+      <h2 class="section-title">Exit Scenarios</h2>
+      <div class="scenario-cards" id="scenarioGrid"></div>
     </div>
-  </div>
 
-  <!-- 4.2 Construction Phase -->
-  <div class="analysis-block">
-    <div class="analysis-header">
-      <h2>Construction Phase Cashflow</h2>
-      <span class="sub" id="s42-period">Sept 2026 – June 2028</span>
+    <!-- Chart -->
+    <div class="section" id="sec-chart" style="display:none">
+      <h2 class="section-title">Equity Build-up</h2>
+      <div class="chart-wrap">
+        <div class="chart-canvas-wrap"><canvas id="roiChart"></canvas></div>
+      </div>
     </div>
-    <table class="analysis-table" id="table42">
-      <thead><tr>
-        <th>Item</th>
-        <th class="right">Monthly</th>
-        <th class="right" id="th42-total">Total (21 months)</th>
-      </tr></thead>
-      <tbody id="tbody42"></tbody>
-    </table>
-    <div class="analysis-note" id="note42"></div>
-  </div>
 
-  <!-- 4.3 Operations Years 1–4 -->
-  <div class="analysis-block">
-    <div class="analysis-header">
-      <h2>Operations: Years 1–4 Post-Completion</h2>
-      <span class="sub">2028–2032 · §7 + §7b AfA active</span>
-    </div>
-    <table class="analysis-table" id="table43">
-      <thead><tr><th>Item</th><th class="right">Monthly</th><th class="right">Annual</th></tr></thead>
-      <tbody id="tbody43"></tbody>
-    </table>
-    <div class="analysis-note" id="note43"></div>
-  </div>
-
-  <!-- 4.4 Operations Years 5–10 -->
-  <div class="analysis-block">
-    <div class="analysis-header">
-      <h2>Operations: Years 5–10 Post-Completion</h2>
-      <span class="sub">2032–2038 · §7b expires, rent growth applied</span>
-    </div>
-    <table class="analysis-table" id="table44">
-      <thead><tr><th>Item</th><th class="right">Monthly</th><th class="right">Annual</th></tr></thead>
-      <tbody id="tbody44"></tbody>
-    </table>
-    <div class="analysis-note" id="note44"></div>
-  </div>
-
-  <!-- 4.5 Total Cash Deployed -->
-  <div class="analysis-block">
-    <div class="analysis-header">
-      <h2>Total Cash Deployed Over Full Period</h2>
-      <span class="sub">All phases combined</span>
-    </div>
-    <table class="analysis-table deployed-table" id="table45">
-      <thead><tr><th>Phase</th><th class="right">Duration</th><th class="right">Cash Out</th></tr></thead>
-      <tbody id="tbody45"></tbody>
-    </table>
-    <div class="analysis-note" id="note45"></div>
-  </div>
-
-  <!-- Exit Scenarios -->
-  <div class="analysis-block">
-    <div class="analysis-header">
-      <h2>Exit Scenarios (Assuming property appreciates x% annually)</h2>
-      <span class="sub">Tax-free under §23 EStG · Min. 10-year hold</span>
-    </div>
-    <div style="padding:var(--space-5)">
-      <div class="scenario-grid" id="scenarioGrid"></div>
-    </div>
-  </div>
-
-  <!-- ROI Chart -->
-  <div class="chart-wrap">
-    <h2>ROI by Appreciation Scenario</h2>
-    <div class="chart-container"><canvas id="roiChart"></canvas></div>
-  </div>
-
-  <!-- Disclaimer -->
-  <footer style="
-    border-top: 1px solid var(--color-border);
-    padding: var(--space-5) var(--space-6);
-    background: var(--color-surface-offset);
-    border-radius: var(--radius-lg);
-  ">
-    <p style="
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-      line-height: 1.7;
-      max-width: 72ch;
-    ">
-      <strong style="color: var(--color-text);">Disclaimer:</strong>
-      This calculator is provided for <strong>informational and illustrative purposes only</strong>.
-      All outputs — including projected cashflows, tax savings, depreciation, ROI estimates, and exit
-      scenarios — are based on simplified assumptions and user-provided inputs. They do not constitute
-      financial, tax, legal, or investment advice. German tax law (§7, §7b AfA, §23 EStG, Splitting­tabelle)
-      is complex and subject to change; individual circumstances vary significantly.
-      <strong>Before making any investment decision, always consult a qualified
-      Steuerberater (tax advisor), and/or
-      licensed financial planner.</strong> The author accepts no liability for decisions
-      made on the basis of this tool.
-    </p>
-  </footer>
-
-</main>
+    <p class="disclaimer">PropROI is for informational and illustrative purposes only. It does not constitute financial, tax, or legal advice. Consult a qualified Steuerberater before making investment decisions.</p>
+  </main>
 </div>
 
-<script>
-// ─── Theme toggle
-(function(){
-  const t=document.querySelector('[data-theme-toggle]'),r=document.documentElement;
-  let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
-  r.setAttribute('data-theme',d);
-  t&&t.addEventListener('click',()=>{
-    d=d==='dark'?'light':'dark';
-    r.setAttribute('data-theme',d);
-    t.innerHTML=d==='dark'
-      ?'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
-      :'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-    if(typeof roiChart!=='undefined'&&roiChart){updateChart();}
-  });
-})();
-
-// ─── German income tax (2025 parameters)
-// Splittingtabelle: divide joint income by 2, compute single tax, multiply by 2
-function germanTaxSingle(zvE){
-  // Zone boundaries for single filer 2025
-  const G=12096,B1=17430,B2=68430,B3=277826;
-  if(zvE<=G) return 0;
-  if(zvE<=B1){const y=(zvE-G)/10000;return Math.round((979.18*y+1400)*y);}
-  if(zvE<=B2){const z=(zvE-B1)/10000;return Math.round((192.59*z+2397)*z+1025);}
-  if(zvE<=B3) return Math.round(0.42*zvE-10636);
-  return Math.round(0.45*zvE-18961);
-}
-function germanTaxMarginBracket(zvE){
-  const G=12096,B1=17430,B2=68430,B3=277826;
-  if(zvE<=G) return {rate:0,bracket:'Grundfreibetrag (0%)',label:'0%'};
-  if(zvE<=B1){const y=(zvE-G)/10000;const rate=Math.round((2*979.18*y+1400)/100);return {rate,bracket:`Progressive zone 1 (14–24%)`,label:rate+'%'};}
-  if(zvE<=B2){const z=(zvE-B1)/10000;const rate=Math.round((2*192.59*z+2397)/100);return {rate,bracket:`Progressive zone 2 (24–42%)`,label:rate+'%'};}
-  if(zvE<=B3) return {rate:42,bracket:'Flat rate zone (42%)',label:'42%'};
-  return {rate:45,bracket:'Top rate (45%)',label:'45%'};
-}
-function computeMarginalRate(income, type, filingStatus){
-  // Convert gross to taxable if needed (simplified: ~20% deductions for employees)
-  let zvE = income;
-  if(type==='gross') zvE = Math.round(income * 0.78);
-
-  // Splitting for married
-  let basisIncome = zvE;
-  if(filingStatus==='married') basisIncome = zvE / 2;
-
-  const {rate, bracket} = germanTaxMarginBracket(basisIncome);
-
-  // Solidarity surcharge (+5.5% on top of income tax, but only above threshold)
-  // Simplified: included in effective rate display
-  return {marginalRate: rate, zvE, basisIncome, bracket, filingStatus};
-}
-
-// Bracket table rows for display
-function buildBracketTable(zvE, filingStatus){
-  const isSplitting = filingStatus==='married';
-  const basis = isSplitting ? zvE/2 : zvE;
-  const G=12096,B1=17430,B2=68430,B3=277826;
-
-  const brackets = [
-    {from:0,to:G,rate:'0%',label:'Grundfreibetrag'},
-    {from:G,to:B1,rate:'14–24%',label:'Progressive zone 1'},
-    {from:B1,to:B2,rate:'24–42%',label:'Progressive zone 2'},
-    {from:B2,to:B3,rate:'42%',label:'Steuerprogression flat'},
-    {from:B3,to:Infinity,rate:'45%',label:'Spitzensteuersatz'},
-  ];
-
-  let html = `<table>
-    <thead><tr>
-      <th>Bracket (${isSplitting?'splitting basis':'single basis'})</th>
-      <th style="text-align:right">From</th>
-      <th style="text-align:right">To</th>
-      <th style="text-align:right">Rate</th>
-    </tr></thead>
-    <tbody>`;
-
-  for(const b of brackets){
-    const isActive = basis > b.from && (b.to===Infinity ? true : basis <= b.to);
-    const fromStr = '€'+b.from.toLocaleString('de-DE');
-    const toStr = b.to===Infinity ? '∞' : '€'+b.to.toLocaleString('de-DE');
-    html += `<tr class="${isActive?'active-bracket':''}">
-      <td>${b.label}</td>
-      <td style="text-align:right">${fromStr}</td>
-      <td style="text-align:right">${toStr}</td>
-      <td style="text-align:right;font-weight:600">${b.rate}</td>
-    </tr>`;
-  }
-  html += '</tbody></table>';
-  return html;
-}
-
-// ─── Formatting helpers
-const fmt = n => (n<0?'-':'+')+' €'+Math.abs(Math.round(n)).toLocaleString('de-DE');
-const fmtAbs = n => '€'+Math.round(n).toLocaleString('de-DE');
-const fmtPct = n => (n>=0?'+':'')+n.toFixed(1)+'%';
-const cls = n => n>=0?'val-pos':'val-neg';
-
-function row(label,monthly,annual,type='normal',monthlyClass='',annualClass=''){
-  let trClass='';
-  if(type==='subtotal')trClass='subtotal';
-  if(type==='total')trClass='total';
-  if(type==='spacer')trClass='spacer';
-  if(type==='section')trClass='section-header';
-  const mCell = monthly!==null ? `<td class="right ${monthlyClass}">${monthly}</td>` : '<td class="right val-neutral">—</td>';
-  const aCell = annual!==null ? `<td class="right ${annualClass}">${annual}</td>` : '<td class="right val-neutral">—</td>';
-  return `<tr class="${trClass}"><td>${label}</td>${mCell}${aCell}</tr>`;
-}
-
-let roiChart = null;
-
-// Null-safe DOM helpers
-function $safe(id){ return document.getElementById(id); }
-function setText(id, val){ var el=$safe(id); if(el) el.textContent=val; }
-function setHTML(id, val){ var el=$safe(id); if(el) el.innerHTML=val; }
-
-function recalculate(){
-  // ─── Read inputs
-  const purchasePrice = +document.getElementById('purchasePrice').value;
-  const landValue = +document.getElementById('landValue').value;
-  const sqm = +document.getElementById('sqm').value;
-  const notaryPct = +document.getElementById('notaryPct').value/100;
-  const transferTaxPct = +document.getElementById('transferTaxPct').value/100;
-  const downPayment = +document.getElementById('downPayment').value;
-  const bankLoan = +document.getElementById('bankLoan').value;
-  const bankRate = +document.getElementById('bankRate').value/100;
-  const kfwLoan = +document.getElementById('kfwLoan').value;
-  const kfwRate = +document.getElementById('kfwRate').value/100;
-  const repaymentRate = +document.getElementById('repaymentRate').value/100;
-  const grossRent = +document.getElementById('grossRent').value;
-  const rentGrowth = +document.getElementById('rentGrowth').value/100;
-  const hausgeld = +document.getElementById('hausgeld').value;
-  const mgmtFees = +document.getElementById('mgmtFees').value;
-  const maintReserve = +document.getElementById('maintReserve').value;
-  const householdIncome = +document.getElementById('householdIncome').value;
-  const incomeType = document.getElementById('incomeType').value;
-  const taxClass = document.getElementById('taxClass').value;
-  const para7Rate = +document.getElementById('para7Rate').value/100;
-  const para7bCap = +document.getElementById('para7bCap').value;
-  const constMonths = +document.getElementById('constMonths').value;
-  const holdYears = +document.getElementById('holdYears').value;
-  const sellingCostPct = +document.getElementById('sellingCostPct').value/100;
-  const customAppreciation = +document.getElementById('customAppreciation').value/100;
-
-  // ─── Commitment fee inputs
-  const commitFeeRate = (+document.getElementById('commitFeeRate').value || 0) / 100;
-  const commitFeeMonths = +document.getElementById('commitFeeMonths').value || 0;
-  const commitFeeRemainingPct = (+document.getElementById('commitFeeRemainingPct').value || 0) / 100;
-  const projectStart = document.getElementById('projectStart').value;
-  const projectCompletion = document.getElementById('projectCompletion').value;
-
-  function monthsBetween(a, b) {
-    if (!a || !b) return 0;
-    const [ay, am] = a.split('-').map(Number);
-    const [by, bm] = b.split('-').map(Number);
-    if (!ay||!am||!by||!bm) return 0;
-    return Math.max(0, (by - ay) * 12 + (bm - am) + 1);
-  }
-  // ─── Derived property
-  const buildingValue = purchasePrice - landValue;
-  const notaryFees = purchasePrice * notaryPct;
-  const transferTax = purchasePrice * transferTaxPct;
-  const totalPurchaseFees = notaryFees + transferTax;
-  const upfrontEquity = totalPurchaseFees + downPayment;
-  const totalLoan = bankLoan + kfwLoan;
-
-  // ─── Commitment fees (requires totalLoan)
-  const effectiveCommitMonths = commitFeeMonths > 0 ? commitFeeMonths : monthsBetween(projectStart, projectCompletion);
-  const commitFeeBase = totalLoan * commitFeeRemainingPct;
-  const monthlyCommitFee = commitFeeBase * commitFeeRate;
-  const totalCommitFees = monthlyCommitFee * effectiveCommitMonths;
-  const blendedRate = (bankLoan*bankRate + kfwLoan*kfwRate)/totalLoan;
-  const monthlyBankInterest = bankLoan*bankRate/12;
-  const monthlyKfwInterest = kfwLoan*kfwRate/12;
-  const monthlyInterestTotal = monthlyBankInterest + monthlyKfwInterest;
-  const monthlyRepayment = totalLoan*repaymentRate/12;
-  const monthlyDebtService = monthlyInterestTotal + monthlyRepayment;
-
-  // ─── Tax computation
-  const taxInfo = computeMarginalRate(householdIncome, incomeType, taxClass);
-  const marginalRate = taxInfo.marginalRate/100;
-  const {zvE, basisIncome, bracket} = taxInfo;
-
-  // Update tax profile panel
-  setText('tp-income', '€'+householdIncome.toLocaleString('de-DE'));
-  setText('tp-income-type', incomeType==='gross'
-    ? `gross income → €${Math.round(zvE).toLocaleString('de-DE')} taxable (est.)`
-    : 'taxable income (zu versteuerndes Einkommen)');
-  setText('tp-taxclass', taxClass==='married'
-    ? 'Married (Kl. 3+5)' : taxClass==='single_parent' ? 'Single parent (Kl. 2)' : 'Single (Kl. 1)');
-  const ratePct = Math.round(marginalRate*100);
-  setText('tp-rate-badge', ratePct+'% marginal rate');
-  setText('tp-rate-explain', taxClass==='married'
-    ? `Splitting basis: €${Math.round(basisIncome).toLocaleString('de-DE')} · ${bracket}`
-    : `Taxable income: €${Math.round(zvE).toLocaleString('de-DE')} · ${bracket}`);
-  setHTML('taxBracketsTable', buildBracketTable(zvE, taxClass));
-
-  // ─── §7 AfA
-  const para7Annual = buildingValue * para7Rate;
-  const para7bBase = Math.min(buildingValue, para7bCap * sqm);
-  const para7bAnnual = para7bBase * para7Rate;
-  const combinedAfA = para7Annual + para7bAnnual;
-  // yr5 declining base: after 4 years §7 at 5%, remaining = buildingValue*(0.95^4)
-  const yr5Base = buildingValue * Math.pow(1-para7Rate, 4);
-  const yr5AfA = yr5Base * para7Rate;
-
-  // ─── Construction phase (Section 4.2)
-  const avgDisbursed = totalLoan * 0.70 * 0.5; // 70% disbursed, avg half outstanding
-  const monthlyConstInterest = avgDisbursed * blendedRate / 12;
-  const totalConstInterest = monthlyConstInterest * constMonths;
-  const constTaxSavingMonthly = monthlyConstInterest * marginalRate;
-  const constTaxSavingTotal = totalConstInterest * marginalRate;
-  const netMonthlyCost42 = -(monthlyConstInterest - constTaxSavingMonthly);
-  const netTotalCost42 = -(totalConstInterest - constTaxSavingTotal);
-
-  setText('th42-total', `Total (${constMonths} months)`);
-  if(projectStart && projectCompletion){
-    const fmtM = s => { const [y,m]=s.split('-'); const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return mn[+m-1]+' '+y; };
-    setText('s42-period', fmtM(projectStart)+' – '+fmtM(projectCompletion));
-  }
-  const tbody42 = document.getElementById('tbody42');
-  tbody42.innerHTML = [
-    row('Interest on disbursed loan', fmt(-monthlyConstInterest), fmt(-totalConstInterest), 'normal', 'val-neg', 'val-neg'),
-    row(`Tax saving at ${ratePct}%`, fmt(constTaxSavingMonthly), fmt(constTaxSavingTotal), 'normal', 'val-pos', 'val-pos'),
-    row('Net interest cost', fmt(netMonthlyCost42), fmt(netTotalCost42), 'subtotal', cls(netMonthlyCost42), cls(netTotalCost42)),
-    row('\u2014', null, null, 'spacer'),
-    row('Commitment Fees', null, null, 'section'),
-    row(`Undisbursed loan base (${(commitFeeRemainingPct*100).toFixed(0)}% of ${fmtAbs(totalLoan)})`, null, fmtAbs(commitFeeBase), 'normal','','val-neg'),
-    row(`Rate × period`, `${(commitFeeRate*100).toFixed(2)}%/mo`, `${effectiveCommitMonths} months`, 'normal','',''),
-    row('Monthly commitment fee', fmt(-monthlyCommitFee), fmt(-totalCommitFees), 'normal','val-neg','val-neg'),
-    row('\u2014', null, null, 'spacer'),
-    row('Total construction cash cost', fmt(netMonthlyCost42 - monthlyCommitFee), fmt(netTotalCost42 - totalCommitFees), 'total', cls(netMonthlyCost42 - monthlyCommitFee), cls(netTotalCost42 - totalCommitFees)),
-  ].join('');
-  document.getElementById('note42').textContent =
-    `Construction interest: €${Math.round(totalConstInterest).toLocaleString('de-DE')} · `+
-    `Tax saving at ${ratePct}%: €${Math.round(constTaxSavingTotal).toLocaleString('de-DE')}. `+
-    `Commitment fees: ${(commitFeeRemainingPct*100).toFixed(0)}% undisbursed (€${Math.round(commitFeeBase).toLocaleString('de-DE')}) `+
-    `× ${(commitFeeRate*100).toFixed(2)}%/mo × ${effectiveCommitMonths} months = `+
-    `€${Math.round(totalCommitFees).toLocaleString('de-DE')}.`;
-
-  // ─── Operations yrs 1–4 (Section 4.3)
-  const deductibleOpsCosts = (hausgeld + mgmtFees) * 12;
-  const grossRentAnnual = grossRent * 12;
-  const allOpsCostsMonthly = hausgeld + mgmtFees + maintReserve;
-  const allOpsCostsAnnual = allOpsCostsMonthly * 12;
-  const netCashOpIncome43_mo = grossRent - allOpsCostsMonthly;
-  const netCashOpIncome43_yr = netCashOpIncome43_mo * 12;
-  const loanInterestAnnual = monthlyInterestTotal * 12;
-  const loanRepaymentAnnual = monthlyRepayment * 12;
-  const pretaxCF43_mo = netCashOpIncome43_mo - monthlyInterestTotal - monthlyRepayment;
-  const pretaxCF43_yr = pretaxCF43_mo * 12;
-  const taxableLoss43 = grossRentAnnual - deductibleOpsCosts - loanInterestAnnual - combinedAfA;
-  const taxSaving43_yr = Math.abs(Math.min(0, taxableLoss43)) * marginalRate;
-  const taxSaving43_mo = taxSaving43_yr / 12;
-  const netCF43_mo = pretaxCF43_mo + taxSaving43_mo;
-  const netCF43_yr = netCF43_mo * 12;
-
-  // Update tax panel monthly saving
-  setText('tp-monthly-saving', fmt(taxSaving43_mo));
-
-  const tbody43 = document.getElementById('tbody43');
-  tbody43.innerHTML = [
-    row('Gross rent', fmt(grossRent), fmt(grossRentAnnual), 'normal', 'val-pos','val-pos'),
-    row('Hausgeld / non-recoverable', fmt(-hausgeld), fmt(-hausgeld*12), 'normal','val-neg','val-neg'),
-    row('SEV + WEG management fees', fmt(-mgmtFees), fmt(-mgmtFees*12), 'normal','val-neg','val-neg'),
-    row('Maintenance reserve (non-deductible)', fmt(-maintReserve), fmt(-maintReserve*12), 'normal','val-neg','val-neg'),
-    row('Net cash operating income', fmt(netCashOpIncome43_mo), fmt(netCashOpIncome43_yr), 'subtotal', cls(netCashOpIncome43_mo), cls(netCashOpIncome43_yr)),
-    row('Loan interest', fmt(-monthlyInterestTotal), fmt(-loanInterestAnnual), 'normal','val-neg','val-neg'),
-    row('Loan repayment', fmt(-monthlyRepayment), fmt(-loanRepaymentAnnual), 'normal','val-neg','val-neg'),
-    row('Pre-tax cashflow', fmt(pretaxCF43_mo), fmt(pretaxCF43_yr), 'subtotal', cls(pretaxCF43_mo), cls(pretaxCF43_yr)),
-    row('—', null, null, 'spacer'),
-    row('Tax calculation:', null, null, 'section'),
-    row('Rental income', null, fmt(grossRentAnnual), 'normal','','val-pos'),
-    row('Deductible costs (mgmt + Hausgeld)', null, fmt(-deductibleOpsCosts), 'normal','','val-neg'),
-    row('Loan interest', null, fmt(-loanInterestAnnual), 'normal','','val-neg'),
-    row(`Total depreciation (§7 + §7b capped)`, null, fmt(-combinedAfA), 'normal','','val-neg'),
-    row('Taxable loss / income', null, fmt(taxableLoss43), 'subtotal','',cls(taxableLoss43)),
-    row(`Tax saving at ${ratePct}%`, fmt(taxSaving43_mo), fmt(taxSaving43_yr), 'subtotal','val-pos','val-pos'),
-    row('—', null, null, 'spacer'),
-    row('Net monthly cashflow (after tax saving)', fmt(netCF43_mo), fmt(netCF43_yr), 'total', cls(netCF43_mo), cls(netCF43_yr)),
-  ].join('');
-  document.getElementById('note43').textContent =
-    `§7b applies to first 4 years post-completion. Combined AfA: €${Math.round(combinedAfA).toLocaleString('de-DE')}/year `+
-    `(§7: €${Math.round(para7Annual).toLocaleString('de-DE')} + §7b capped: €${Math.round(para7bAnnual).toLocaleString('de-DE')}).`;
-
-  // ─── Operations yrs 5–10 (Section 4.4)
-  const rentYr5 = grossRent * Math.pow(1+rentGrowth, 4);
-  const rentYr5Annual = rentYr5 * 12;
-  const netCashOpIncome44_mo = rentYr5 - allOpsCostsMonthly;
-  const netCashOpIncome44_yr = netCashOpIncome44_mo * 12;
-  const loanInterest44_mo = monthlyInterestTotal * 0.94; // slight reduction after repayments
-  const loanInterest44_yr = loanInterest44_mo * 12;
-  const pretaxCF44_mo = netCashOpIncome44_mo - loanInterest44_mo - monthlyRepayment;
-  const pretaxCF44_yr = pretaxCF44_mo * 12;
-  const taxableLoss44 = rentYr5Annual - deductibleOpsCosts - loanInterest44_yr - yr5AfA;
-  const taxSaving44_yr = Math.abs(Math.min(0, taxableLoss44)) * marginalRate;
-  const taxSaving44_mo = taxSaving44_yr / 12;
-  const netCF44_mo = pretaxCF44_mo + taxSaving44_mo;
-  const netCF44_yr = netCF44_mo * 12;
-
-  const tbody44 = document.getElementById('tbody44');
-  tbody44.innerHTML = [
-    row('Gross rent', fmt(rentYr5), fmt(rentYr5Annual), 'normal','val-pos','val-pos'),
-    row('All operating costs', fmt(-allOpsCostsMonthly), fmt(-allOpsCostsAnnual), 'normal','val-neg','val-neg'),
-    row('Net cash operating income', fmt(netCashOpIncome44_mo), fmt(netCashOpIncome44_yr), 'subtotal', cls(netCashOpIncome44_mo), cls(netCashOpIncome44_yr)),
-    row('Loan interest (~reducing)', fmt(-loanInterest44_mo), fmt(-loanInterest44_yr), 'normal','val-neg','val-neg'),
-    row('Loan repayment', fmt(-monthlyRepayment), fmt(-loanRepaymentAnnual), 'normal','val-neg','val-neg'),
-    row('Pre-tax cashflow', fmt(pretaxCF44_mo), fmt(pretaxCF44_yr), 'subtotal', cls(pretaxCF44_mo), cls(pretaxCF44_yr)),
-    row(`Depreciation §7 only (~yr 5)`, null, fmt(-yr5AfA), 'normal','','val-neg'),
-    row('Taxable loss / income', null, fmt(taxableLoss44), 'subtotal','',cls(taxableLoss44)),
-    row(`Tax saving at ${ratePct}%`, fmt(taxSaving44_mo), fmt(taxSaving44_yr), 'subtotal','val-pos','val-pos'),
-    row('—', null, null, 'spacer'),
-    row('Net monthly cashflow (after tax saving)', fmt(netCF44_mo), fmt(netCF44_yr), 'total', cls(netCF44_mo), cls(netCF44_yr)),
-  ].join('');
-  document.getElementById('note44').textContent =
-    `§7b expires from year 5. Rent grows to ~€${Math.round(rentYr5).toLocaleString('de-DE')}/month `+
-    `at ${(rentGrowth*100).toFixed(1)}% p.a. §7 only (declining base): ~€${Math.round(yr5AfA).toLocaleString('de-DE')}/year.`;
-
-  // ─── 4.5 Total Cash Deployed
-  const constPhaseTotal = Math.abs(netTotalCost42) + totalCommitFees;
-  const ops14Total = Math.abs(netCF43_mo) * 48;
-  const ops510Total = Math.abs(netCF44_mo) * 72;
-  const totalDeployed = upfrontEquity + constPhaseTotal + ops14Total + ops510Total;
-
-  const tbody45 = document.getElementById('tbody45');
-  tbody45.innerHTML = [
-    `<tr><td>Upfront equity</td><td class="right val-neutral">—</td><td class="right">${fmtAbs(upfrontEquity)}</td></tr>`,
-    `<tr><td>Construction phase (interest + commitment fees)</td><td class="right val-neutral">${constMonths} months</td><td class="right">${fmtAbs(constPhaseTotal)}</td></tr>`,
-    `<tr><td>Operations years 1–4 (€${Math.abs(Math.round(netCF43_mo)).toLocaleString('de-DE')}/month)</td><td class="right val-neutral">48 months</td><td class="right">${fmtAbs(ops14Total)}</td></tr>`,
-    `<tr><td>Operations years 5–10 (€${Math.abs(Math.round(netCF44_mo)).toLocaleString('de-DE')}/month)</td><td class="right val-neutral">72 months</td><td class="right">${fmtAbs(ops510Total)}</td></tr>`,
-    `<tr class="total"><td>Total cash deployed</td><td class="right">—</td><td class="right">${fmtAbs(totalDeployed)}</td></tr>`,
-  ].join('');
-  document.getElementById('note45').textContent =
-    `Monthly cashflow deficit: €${Math.abs(Math.round(netCF43_mo)).toLocaleString('de-DE')}–${Math.abs(Math.round(netCF44_mo)).toLocaleString('de-DE')}/month throughout the hold period at ${ratePct}% marginal tax rate.`;
-
-  // ─── Remaining loan at exit
-  // Simplified: outstanding = totalLoan - (repaymentRate * totalLoan * holdYears)
-  const remainingLoan = Math.max(0, totalLoan - totalLoan*repaymentRate*holdYears);
-
-  // ─── Exit scenarios
-  function calcScenario(apprRate, label, colorClass, verdict){
-    const salePrice = purchasePrice * Math.pow(1+apprRate, holdYears);
-    const sellingCosts = salePrice * sellingCostPct;
-    const netProceeds = salePrice - sellingCosts;
-    const equityAtExit = netProceeds - remainingLoan;
-    const netResult = equityAtExit - totalDeployed;
-    const roi = (netResult / totalDeployed) / holdYears * 100;
-    return {salePrice,sellingCosts,netProceeds,equityAtExit,netResult,roi,label,apprRate,colorClass,verdict};
-  }
-
-  const scenarios = [
-    calcScenario(0.00, 'Worst Case', 'misses', 'Market flat for a decade'),
-    calcScenario(0.02, 'Conservative', 'misses', 'Below 6-8% ROI return target'),
-    calcScenario(0.035,'Base Case', 'meets', 'Meets target. Most likely scenario.'),
-    calcScenario(0.05, 'Optimistic', 'meets', 'Strong.'),
-    calcScenario(customAppreciation, 'Custom', 'custom', `${(customAppreciation*100).toFixed(1)}% appreciation`),
-  ];
-
-  const scenarioGrid = document.getElementById('scenarioGrid');
-  scenarioGrid.innerHTML = scenarios.map(s => `
-    <div class="scenario-card ${s.colorClass}">
-      <div class="sc-label">${s.label}</div>
-      <div class="sc-appr">${(s.apprRate*100).toFixed(1)}% annual appreciation</div>
-      <table class="sc-table">
-        <tr><td>Sale price</td><td>${fmtAbs(s.salePrice)}</td></tr>
-        <tr><td>Selling costs</td><td>−${fmtAbs(s.sellingCosts)}</td></tr>
-        <tr><td>Net proceeds</td><td>${fmtAbs(s.netProceeds)}</td></tr>
-        <tr><td>Remaining loan</td><td>−${fmtAbs(remainingLoan)}</td></tr>
-        <tr><td>Equity at exit</td><td style="font-weight:600">${fmtAbs(s.equityAtExit)}</td></tr>
-        <tr><td>Cash deployed</td><td>${fmtAbs(totalDeployed)}</td></tr>
-        <tr class="sc-roi-row"><td>Net ${s.netResult>=0?'profit':'loss'}</td><td style="font-weight:700">${s.netResult>=0?'':'−'}${fmtAbs(Math.abs(s.netResult))}</td></tr>
-        <tr><td>Annualised ROI</td><td class="sc-roi">${s.roi.toFixed(1)}%</td></tr>
-      </table>
-      <div class="sc-verdict">${s.verdict}</div>
-    </div>
-  `).join('');
-
-  // ─── Chart
-  updateChart(scenarios);
-}
-
-function updateChart(scenarios){
-  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
-  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-  const textColor = isDark ? '#7c7b76' : '#6b6a65';
-  const labels = scenarios ? scenarios.map(s=>s.label) : [];
-  const roiData = scenarios ? scenarios.map(s=>+s.roi.toFixed(1)) : [];
-  const bgColors = scenarios ? scenarios.map(s =>
-    s.colorClass==='meets'?'rgba(46,107,24,0.7)':
-    s.colorClass==='misses'?'rgba(161,44,44,0.7)':
-    'rgba(176,122,0,0.7)'
-  ) : [];
-
-  if(roiChart){roiChart.destroy();roiChart=null;}
-  const ctx = document.getElementById('roiChart').getContext('2d');
-  roiChart = new Chart(ctx, {
-    type:'bar',
-    data:{
-      labels,
-      datasets:[{
-        label:'Annualised ROI (%)',
-        data:roiData,
-        backgroundColor:bgColors,
-        borderRadius:4,
-        borderSkipped:false,
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y}%`}}},
-      scales:{
-        x:{grid:{color:gridColor},ticks:{color:textColor,font:{family:'Inter',size:11}}},
-        y:{grid:{color:gridColor},ticks:{color:textColor,font:{family:'Inter',size:11},callback:v=>v+'%'},
-          border:{dash:[4,4]}}
-      }
-    }
-  });
-}
-
-// Initial calc on load
-window.addEventListener('DOMContentLoaded', recalculate);
-document.getElementById('incomeType').addEventListener('change', function(){
-  const isGross = this.value==='gross';
-  document.getElementById('incomeHint').textContent = isGross
-    ? 'Gross household income — estimated ~22% deduction applied to derive taxable income'
-    : 'Joint household taxable income (zu versteuerndes Einkommen)';
-});
-</script>
+<!-- Load order matters: config → model → render → main -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="config.js"></script>
+<script src="model.js"></script>
+<script src="render.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
